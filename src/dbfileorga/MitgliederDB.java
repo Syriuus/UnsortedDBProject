@@ -97,6 +97,13 @@ public class MitgliederDB implements Iterable<Record>
 		return -1;
 	}
 
+	private int getRelativeRecNum(int numRecord, int blockNum) {
+		for(int i = 0; i < blockNum; i++) {
+			numRecord -= db[i].getNumberOfRecords();
+		}
+		return numRecord;
+	}
+
 	public DBBlock getBlock(int i){
 		return db[i];
 	}
@@ -158,61 +165,77 @@ public class MitgliederDB implements Iterable<Record>
 	}
 
 	private void deleteRecord(int numRecord){
-		int counter = 0 ;
-		for(DBBlock b : db){
-			DBBlock newBlock = new DBBlock();
-			for(Record record : b){
-				counter++;
-				if(counter != numRecord){
-					newBlock.insertRecordAtTheEnd(record);
-				}
-			}
-			b.delete();
-			for(Record record : newBlock){
-				b.insertRecordAtTheEnd(record);
-			}
-		}
+		int blockNumOfRecord = getBlockNumOfRecord(numRecord);
+		db[blockNumOfRecord].deleteRecord(getRelativeRecNum(numRecord, blockNumOfRecord));
+
+
+//		int counter = 0 ;
+//		for(DBBlock b : db){
+//			DBBlock newBlock = new DBBlock();
+//			for(Record record : b){
+//				counter++;
+//				if(counter != numRecord){
+//					newBlock.insertRecordAtTheEnd(record);
+//				}
+//			}
+//			b.delete();
+//			for(Record record : newBlock){
+//				b.insertRecordAtTheEnd(record);
+//			}
+//		}
+
 	}
 
 	/**
 	 * Replaces the record at the specified position with the given one.
 	 * @param numRecord the position of the old record in the db
-	 * @param record the new record
+	 * @param newRecord the new record
 	 *
 	 */
 	public void modify(int numRecord, Record newRecord){
-		//TODO
-		int counter = 0;
-		boolean insertOverflow = false;
-		DBBlock recordsToInsert = new DBBlock();
-
-		for(DBBlock b : db){
-			DBBlock newBlock = new DBBlock();
-			if(insertOverflow){
-				insertOverflow = false;
-				for(Record record : recordsToInsert){
-					newBlock.insertRecordAtTheEnd(record);
-				}
-				recordsToInsert.delete();
-			}
-			for(Record record : b){
-				counter++;
-				if(counter == numRecord){
-					newBlock.insertRecordAtTheEnd(newRecord);
-
-				}
-				else{
-					if(newBlock.insertRecordAtTheEnd(record) == -1){
-						insertOverflow = true;
-						recordsToInsert.insertRecordAtTheEnd(record);
-					}
-				}
-			}
-			b.delete();
-			for(Record record : newBlock){
-				b.insertRecordAtTheEnd(record);
-			}
+		if(newRecord.length() <= read(numRecord).length()) {
+			int blockNumOfRecord = getBlockNumOfRecord(numRecord);
+			db[blockNumOfRecord].modifyRecord(getRelativeRecNum(numRecord, blockNumOfRecord), newRecord);
+		} else {
+			insert(newRecord);
+			deleteRecord(numRecord);
 		}
+		closeGapsInDB();
+
+
+//		//TODO
+//		int counter = 0;
+//		boolean insertOverflow = false;
+//		DBBlock recordsToInsert = new DBBlock();
+//
+//		for(DBBlock b : db){
+//			DBBlock newBlock = new DBBlock();
+//			if(insertOverflow){
+//				insertOverflow = false;
+//				for(Record record : recordsToInsert){
+//					newBlock.insertRecordAtTheEnd(record);
+//				}
+//				recordsToInsert.delete();
+//			}
+//			for(Record record : b){
+//				counter++;
+//				if(counter == numRecord){
+//					newBlock.insertRecordAtTheEnd(newRecord);
+//
+//				}
+//				else{
+//					if(newBlock.insertRecordAtTheEnd(record) == -1){
+//						insertOverflow = true;
+//						recordsToInsert.insertRecordAtTheEnd(record);
+//					}
+//				}
+//			}
+//			b.delete();
+//			for(Record record : newBlock){
+//				b.insertRecordAtTheEnd(record);
+//			}
+//		}
+
 	}
 
 	private void closeGapsInDB(){

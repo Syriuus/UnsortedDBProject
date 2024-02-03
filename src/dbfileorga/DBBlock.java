@@ -13,7 +13,7 @@ public class DBBlock implements Iterable<Record> {
 			
 	/**
 	 * Searches the record with number recNum in the DBBlock. 
-	 * @param  RecNum is the number of Record 1 = first record
+	 * @param  recNum is the number of Record 1 = first record
 	 * @return record with the specified number or null if record was not found 
 	 */
 	public Record getRecord(int recNum){
@@ -39,6 +39,15 @@ public class DBBlock implements Iterable<Record> {
 		}
 	}
 
+	private int getStartPosOfRecord(int recNum) {
+		int currRecPos = 1;
+		for(int i = 0; i < block.length; i++) {
+			if(currRecPos == recNum) return i;
+			if(block[i] == RECDEL) currRecPos++;
+		}
+		return -1;
+	}
+
 	private int getEndPosOfRecord(int startPos){
 		int currPos = startPos;
 		while( currPos < block.length ){
@@ -50,7 +59,17 @@ public class DBBlock implements Iterable<Record> {
 		}
 		return -1;
 	}
-	
+
+	public void deleteRecord(int recNum) {
+		int startPos = getStartPosOfRecord(recNum);
+		int endPos = getEndPosOfRecord(startPos);
+		if(startPos != -1 && endPos >= startPos) Arrays.fill(block, startPos, endPos, '\u0000');
+	}
+
+	public void modifyRecord(int recNum, Record newRecord) {
+		deleteRecord(recNum);
+		insertRecordAtPos(getStartPosOfRecord(recNum), newRecord);
+	}
 	
 	/**
 	 * Returns the number of records that are in the block
