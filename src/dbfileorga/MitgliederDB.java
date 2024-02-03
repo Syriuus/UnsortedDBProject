@@ -4,19 +4,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MitgliederDB implements Iterable<Record>
 {
 
 	protected DBBlock db[] = new DBBlock[8];
-	private boolean ordered = false;
+	private boolean isDbOrdered = false;
 
 
 	public MitgliederDB(boolean ordered){
 		this();
-		this.ordered = ordered;
-		insertMitgliederIntoDB(ordered);
+		this.isDbOrdered = ordered;
+		insertMitgliederIntoDB();
 
 	}
 
@@ -31,10 +30,10 @@ public class MitgliederDB implements Iterable<Record>
 
 	}
 
-	private void insertMitgliederIntoDB(boolean ordered) {
+	private void insertMitgliederIntoDB() {
 		MitgliederTableAsArray mitglieder = new MitgliederTableAsArray();
 		String mitgliederDatasets[];
-		if (ordered){
+		if (isDbOrdered){
 			mitgliederDatasets = mitglieder.recordsOrdered;
 		}else{
 			mitgliederDatasets = mitglieder.records;
@@ -154,6 +153,25 @@ public class MitgliederDB implements Iterable<Record>
 	 */
 	public void delete(int numRecord){
 		//TODO implement
+		deleteRecord(numRecord);
+		closeGapsInDB();
+	}
+
+	private void deleteRecord(int numRecord){
+		int counter = 0 ;
+		for(DBBlock b : db){
+			DBBlock newBlock = new DBBlock();
+			for(Record record : b){
+				counter++;
+				if(counter != numRecord){
+					newBlock.insertRecordAtTheEnd(record);
+				}
+			}
+			b.delete();
+			for(Record record : newBlock){
+				b.insertRecordAtTheEnd(record);
+			}
+		}
 	}
 
 	/**
@@ -162,8 +180,53 @@ public class MitgliederDB implements Iterable<Record>
 	 * @param record the new record
 	 *
 	 */
-	public void modify(int numRecord, Record record){
+	public void modify(int numRecord, Record newRecord){
 		//TODO
+		int counter = 0;
+		boolean insertOverflow = false;
+		DBBlock recordsToInsert = new DBBlock();
+
+		for(DBBlock b : db){
+			DBBlock newBlock = new DBBlock();
+			if(insertOverflow){
+				insertOverflow = false;
+				for(Record record : recordsToInsert){
+					newBlock.insertRecordAtTheEnd(record);
+				}
+				recordsToInsert.delete();
+			}
+			for(Record record : b){
+				counter++;
+				if(counter == numRecord){
+					newBlock.insertRecordAtTheEnd(newRecord);
+
+				}
+				else{
+					if(newBlock.insertRecordAtTheEnd(record) == -1){
+						insertOverflow = true;
+						recordsToInsert.insertRecordAtTheEnd(record);
+					}
+				}
+			}
+			b.delete();
+			for(Record record : newBlock){
+				b.insertRecordAtTheEnd(record);
+			}
+		}
+	}
+
+	private void closeGapsInDB(){
+		List<String> dbContent = new ArrayList<>();
+
+		for(DBBlock b : db){
+			for(Record record : b){
+				dbContent.add(record.toString());
+			}
+			b.delete();
+		}
+		for (String record : dbContent ){
+			appendRecord(new Record(record));
+		}
 	}
 
 
