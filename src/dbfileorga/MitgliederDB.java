@@ -150,7 +150,13 @@ public class MitgliederDB implements Iterable<Record>
 	 */
 	public int insert(Record record){
 		//TODO implement orderedDB Solution
-		appendRecord(record);
+		int result = -1;
+		int blockNumber = 0;
+		while(result == -1){
+			result = db[blockNumber].insertRecord(record);
+			blockNumber++;
+			if(blockNumber > 8) return -1;
+		}
 		return findPos(record.getAttribute(1));
 	}
 
@@ -160,31 +166,10 @@ public class MitgliederDB implements Iterable<Record>
 	 */
 	public void delete(int numRecord){
 		//TODO implement
-		deleteRecord(numRecord);
-		closeGapsInDB();
-	}
-
-	private void deleteRecord(int numRecord){
 		int blockNumOfRecord = getBlockNumOfRecord(numRecord);
 		db[blockNumOfRecord].deleteRecord(getRelativeRecNum(numRecord, blockNumOfRecord));
-
-
-//		int counter = 0 ;
-//		for(DBBlock b : db){
-//			DBBlock newBlock = new DBBlock();
-//			for(Record record : b){
-//				counter++;
-//				if(counter != numRecord){
-//					newBlock.insertRecordAtTheEnd(record);
-//				}
-//			}
-//			b.delete();
-//			for(Record record : newBlock){
-//				b.insertRecordAtTheEnd(record);
-//			}
-//		}
-
 	}
+
 
 	/**
 	 * Replaces the record at the specified position with the given one.
@@ -197,44 +182,10 @@ public class MitgliederDB implements Iterable<Record>
 			int blockNumOfRecord = getBlockNumOfRecord(numRecord);
 			db[blockNumOfRecord].modifyRecord(getRelativeRecNum(numRecord, blockNumOfRecord), newRecord);
 		} else {
+			delete(numRecord);
 			insert(newRecord);
-			deleteRecord(numRecord);
 		}
-		closeGapsInDB();
 
-
-//		//TODO
-//		int counter = 0;
-//		boolean insertOverflow = false;
-//		DBBlock recordsToInsert = new DBBlock();
-//
-//		for(DBBlock b : db){
-//			DBBlock newBlock = new DBBlock();
-//			if(insertOverflow){
-//				insertOverflow = false;
-//				for(Record record : recordsToInsert){
-//					newBlock.insertRecordAtTheEnd(record);
-//				}
-//				recordsToInsert.delete();
-//			}
-//			for(Record record : b){
-//				counter++;
-//				if(counter == numRecord){
-//					newBlock.insertRecordAtTheEnd(newRecord);
-//
-//				}
-//				else{
-//					if(newBlock.insertRecordAtTheEnd(record) == -1){
-//						insertOverflow = true;
-//						recordsToInsert.insertRecordAtTheEnd(record);
-//					}
-//				}
-//			}
-//			b.delete();
-//			for(Record record : newBlock){
-//				b.insertRecordAtTheEnd(record);
-//			}
-//		}
 
 	}
 

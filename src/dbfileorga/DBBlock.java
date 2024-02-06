@@ -63,7 +63,8 @@ public class DBBlock implements Iterable<Record> {
 	public void deleteRecord(int recNum) {
 		int startPos = getStartPosOfRecord(recNum);
 		int endPos = getEndPosOfRecord(startPos);
-		if(startPos != -1 && endPos >= startPos) Arrays.fill(block, startPos, endPos, '\u0000');
+
+		if(startPos != -1 && endPos >= startPos) Arrays.fill(block, startPos, endPos + 1, DEFCHAR);
 	}
 
 	public void modifyRecord(int recNum, Record newRecord) {
@@ -94,6 +95,19 @@ public class DBBlock implements Iterable<Record> {
 	public int insertRecordAtTheEnd(Record record){
 		int startPos = findEmptySpace();
 		return insertRecordAtPos(startPos, record);
+	}
+
+	public int insertRecord(Record record){
+		int startPos = findEmptySpace();
+		boolean insertable = true;
+		for(int i = 0; i <= record.length(); i++){
+			if(startPos + i < 256){
+				if(block[startPos + i] != DEFCHAR) insertable = false;
+			}
+
+		}
+		if(insertable) return insertRecordAtPos(startPos, record);
+		return -1;
 	}
 	
 	/**
@@ -141,9 +155,9 @@ public class DBBlock implements Iterable<Record> {
 		String result = new String();
 		for (int i = 0; i <block.length;++i){
 			if (block[i] == DEFCHAR){
-				return result;
+				result += "";
 			}
-			if (block[i] == RECDEL){
+			else if (block[i] == RECDEL){
 				result += "\n";
 			}else{
 				result += block[i];
