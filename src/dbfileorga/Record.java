@@ -37,7 +37,7 @@ public class Record {
 	public String getAttribute(int attrNum){
 		int currAttributeNum = 1;
 		for (int i = 0; i < record.length; ++i){
-			if (currAttributeNum == attrNum){
+			if (currAttributeNum == attrNum && record[i] != DBBlock.DEFCHAR){
 				int end = getEndPosOfAttribute(i);
 				return new String(Arrays.copyOfRange(record, i, end));
 			}

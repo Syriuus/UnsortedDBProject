@@ -101,10 +101,9 @@ public class DBBlock implements Iterable<Record> {
 		int startPos = findEmptySpace();
 		boolean insertable = true;
 		for(int i = 0; i <= record.length(); i++){
-			if(startPos + i < 256){
+			if(startPos + i < BLOCKSIZE){
 				if(block[startPos + i] != DEFCHAR) insertable = false;
 			}
-
 		}
 		if(insertable) return insertRecordAtPos(startPos, record);
 		return -1;
