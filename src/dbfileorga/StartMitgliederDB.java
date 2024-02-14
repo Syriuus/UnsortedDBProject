@@ -26,6 +26,9 @@ public class StartMitgliederDB {
 
 			//delete the record with Mitgliedsnummer 95
 			db.delete(db.findPos("97"));
+
+
+			db.closeGapsInDB();
 			System.out.println(db);
 
 	}

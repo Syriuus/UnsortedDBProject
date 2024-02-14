@@ -19,7 +19,7 @@ public class DBBlock implements Iterable<Record> {
 	public Record getRecord(int recNum){
 		int currRecNum = 1; //first Record starts at 0
 		for (int i = 0; i <block.length;++i){
-			if (currRecNum == recNum){
+			if (currRecNum == recNum && block[i] != DEFCHAR){
 				return getRecordFromBlock(i);
 			}
 			if (block[i] == RECDEL){
@@ -42,7 +42,7 @@ public class DBBlock implements Iterable<Record> {
 	private int getStartPosOfRecord(int recNum) {
 		int currRecPos = 1;
 		for(int i = 0; i < block.length; i++) {
-			if(currRecPos == recNum) return i;
+			if(currRecPos == recNum && block[i] != DEFCHAR) return i;
 			if(block[i] == RECDEL) currRecPos++;
 		}
 		return -1;
