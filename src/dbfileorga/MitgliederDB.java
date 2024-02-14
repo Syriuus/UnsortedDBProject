@@ -200,7 +200,7 @@ public class MitgliederDB implements Iterable<Record> {
 
                     if (i == blockNumber && k == recordNumberInBlock) {
                         if (newBlock.insertRecord(record) == -1) {
-                            leftoverRecords.add(record.toString());
+                            leftoverRecords.add(record.toString().replaceAll("\0", ""));
                         }
                     }
                     if (newBlock.insertRecord(r) == -1) {
@@ -258,7 +258,6 @@ public class MitgliederDB implements Iterable<Record> {
             }
             insertPosition -= block.getNumberOfRecords();
             counter++;
-            System.out.println(counter + "  " + insertPosition);
         }
         return blockNumber + "," + recordNumberInBlock;
     }
@@ -270,6 +269,7 @@ public class MitgliederDB implements Iterable<Record> {
      */
     public void delete(int numRecord) {
         //TODO implement
+        if(numRecord == -1) return;
         int blockNumOfRecord = getBlockNumOfRecord(numRecord);
         db[blockNumOfRecord].deleteRecord(getRelativeRecNum(numRecord, blockNumOfRecord));
     }
@@ -283,6 +283,7 @@ public class MitgliederDB implements Iterable<Record> {
      */
     public void modify(int numRecord, Record newRecord) {
         delete(numRecord);
+        if(isDbOrdered) closeGapsInDB();
         insert(newRecord);
     }
 
@@ -291,7 +292,7 @@ public class MitgliederDB implements Iterable<Record> {
 
         for (DBBlock b : db) {
             for (Record record : b) {
-                dbContent.add(record.toString());
+                dbContent.add(record.toString().replaceAll("\0", ""));
             }
             b.delete();
         }

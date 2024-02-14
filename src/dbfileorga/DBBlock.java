@@ -155,7 +155,7 @@ public class DBBlock implements Iterable<Record> {
 		String result = new String();
 		for (int i = 0; i <block.length;++i){
 			if (block[i] == DEFCHAR){
-				result += "";
+				result += DEFCHAR;
 			}
 			else if (block[i] == RECDEL){
 				result += "\n";
