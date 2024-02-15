@@ -28,8 +28,8 @@ public class DBBlock implements Iterable<Record> {
 		}
 		return null;
 	}
-	
-	
+
+
 	private Record getRecordFromBlock(int startPos) {
 		int endPos = getEndPosOfRecord(startPos);
 		if (endPos != -1){ 
@@ -60,16 +60,16 @@ public class DBBlock implements Iterable<Record> {
 		return -1;
 	}
 
+	/**
+	 * deletes a record form the database
+	 * @param recNum number of the record in the database
+	 *
+	 */
 	public void deleteRecord(int recNum) {
 		int startPos = getStartPosOfRecord(recNum);
 		int endPos = getEndPosOfRecord(startPos);
 
 		if(startPos != -1 && endPos >= startPos) Arrays.fill(block, startPos, endPos + 1, DEFCHAR);
-	}
-
-	public void modifyRecord(int recNum, Record newRecord) {
-		deleteRecord(recNum);
-		insertRecordAtPos(getStartPosOfRecord(recNum), newRecord);
 	}
 	
 	/**
@@ -85,11 +85,11 @@ public class DBBlock implements Iterable<Record> {
 		}
 		return count;
 	}
-	
+
 	/**
 	 * Inserts an record at the end of the block
 	 * @param record the record to insert
-	 * @return returns the last position (the position of the RECDEL char) of the inserted record 
+	 * @return returns the last position (the position of the RECDEL char) of the inserted record
 	 * 		   returns -1 if the insert fails
 	 */
 	public int insertRecordAtTheEnd(Record record){
@@ -97,6 +97,12 @@ public class DBBlock implements Iterable<Record> {
 		return insertRecordAtPos(startPos, record);
 	}
 
+	/**
+	 * Inserts an record at any possible space in the database
+	 * @param record the record to insert
+	 * @return returns the last position (the position of the RECDEL char) of the inserted record
+	 * 		   returns -1 if the insert fails
+	 */
 	public int insertRecord(Record record){
 		int startPos = findEmptySpace();
 		boolean insertable = true;

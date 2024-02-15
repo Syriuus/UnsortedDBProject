@@ -95,6 +95,13 @@ public class MitgliederDB implements Iterable<Record> {
         return -1;
     }
 
+    /**
+     * Returns the record matching the record number
+     *
+     * @param numRecord total number of the record
+     * @param blockNum number of the block
+     * @return position of record in this block
+     */
     private int getRelativeRecNum(int numRecord, int blockNum) {
         for (int i = 0; i < blockNum; i++) {
             numRecord -= db[i].getNumberOfRecords();
@@ -114,7 +121,6 @@ public class MitgliederDB implements Iterable<Record> {
      * @return the record matching the search term
      */
     public Record read(int recNum) {
-		// TODO binary search?
         int counter = 0;
         for (DBBlock b : db) {
             for (Record record : b) {
@@ -128,6 +134,7 @@ public class MitgliederDB implements Iterable<Record> {
 
     /**
      * Returns the number of the first record that matches the search term
+     * If the DB is ordered it uses the binary search algorithm
      *
      * @param searchTerm the term to search for
      * @return the number of the record in the DB -1 if not found
@@ -165,12 +172,12 @@ public class MitgliederDB implements Iterable<Record> {
 
     /**
      * Inserts the record into the file and returns the record number
+     * If the DB is ordered the insert position is determined with a binary search algorithm
      *
      * @param record
      * @return the record number of the inserted record
      */
     public int insert(Record record) {
-        //TODO implement orderedDB Solution
 		if(findPos(record.getAttribute(1)) != -1) return -1;
 		if(!isDbOrdered){
 			int result = -1;
@@ -182,104 +189,94 @@ public class MitgliederDB implements Iterable<Record> {
 			}
 		}
 		else{
-            int insertRecordMitnr = Integer.parseInt(record.getAttribute(1));
             List<String> leftoverRecords = new ArrayList<>();
-            leftoverRecords.add(record.toString());
+            String[] blockPosition = getBlockPosition(record).split(",");
+            int blockNumber = Integer.parseInt(blockPosition[0]);
+            int recordNumberInBlock = Integer.parseInt(blockPosition[1]);
 
-            for(DBBlock dbBlock : db) {
-                int blockRecSum = dbBlock.getNumberOfRecords();
-                int blockRecNum = 1;
-                for (int i = 0; i < blockRecSum; i++) {
-                    if(Integer.parseInt(dbBlock.getRecord(blockRecNum).getAttribute(1)) > insertRecordMitnr) {
-                        leftoverRecords.add(dbBlock.getRecord(blockRecNum).toString());
-                        dbBlock.deleteRecord(blockRecNum);
-                    } else blockRecNum++;
+            for (int i = blockNumber; i < db.length; i++) {
+                DBBlock block = db[i];
+                DBBlock newBlock = new DBBlock();
+                for (int k = 1; k <= block.getNumberOfRecords(); k++) {
+                    Record r = block.getRecord(k);
+
+                    leftoverRecords.removeIf(s -> newBlock.insertRecord(new Record(s)) != -1);
+
+                    if (i == blockNumber && k == recordNumberInBlock) {
+                        if (newBlock.insertRecord(record) == -1) {
+                            leftoverRecords.add(record.toString().replaceAll("\0", ""));
+                        }
+                    }
+                    if (newBlock.insertRecord(r) == -1) {
+                        leftoverRecords.add(r.toString());
+                    }
                 }
+
+                db[i] = newBlock;
             }
-
-            for (String currRecord : leftoverRecords) {
-                appendRecord(new Record(currRecord));
-            }
-
-
-//            List<String> leftoverRecords = new ArrayList<>();
-//            String[] blockPosition = getBlockPosition(record).split(",");
-//            int blockNumber = Integer.parseInt(blockPosition[0]);
-//            int recordNumberInBlock = Integer.parseInt(blockPosition[1]);
-//
-//
-//
-//            for (int i = blockNumber; i < db.length; i++) {
-//                DBBlock block = db[i];
-//                DBBlock newBlock = new DBBlock();
-//                for (int k = 1; k <= block.getNumberOfRecords(); k++) {
-//                    Record r = block.getRecord(k);
-//
-//                    leftoverRecords.removeIf(s -> newBlock.insertRecord(new Record(s)) != -1);
-//
-//                    if (i == blockNumber && k == recordNumberInBlock) {
-//                        if (newBlock.insertRecord(record) == -1) {
-//                            leftoverRecords.add(record.toString().replaceAll("\0", ""));
-//                        }
-//                    }
-//                    if (newBlock.insertRecord(r) == -1) {
-//                        leftoverRecords.add(r.toString());
-//                    }
-//                }
-//                db[i] = newBlock;
-//            }
-//
-//            return findPos(record.getAttribute(1));
-
+            leftoverRecords.removeIf(s -> appendRecord(new Record(s)) != -1);
+            return findPos(record.getAttribute(1));
 		}
         return findPos(record.getAttribute(1));
     }
 
-//    private int getInsertPosition(Record record){
-//        int maxRecords = getNumberOfRecords();
-//        int lowerBound = 1;
-//        int insertPosition = 0;
-//        while(lowerBound < maxRecords) {
-//            int middle = lowerBound + (maxRecords - lowerBound) / 2;
-//            int middleBlockNumber = getBlockNumOfRecord(middle);
-//            String middleAttribute = db[middleBlockNumber].getRecord(getRelativeRecNum(middle, middleBlockNumber)).getAttribute(1);
-//
-//            if(Integer.parseInt(middleAttribute) < Integer.parseInt(record.getAttribute(1))) {
-//                lowerBound = middle + 1;
-//            } else {
-//                maxRecords = middle - 1;
-//            }
-//        }
-//
-//        if(lowerBound > maxRecords) {
-//            lowerBound = maxRecords;
-//        }
-//
-//        if(Integer.parseInt(read(lowerBound).getAttribute(1)) < Integer.parseInt(record.getAttribute(1))) {
-//            insertPosition = lowerBound + 1;
-//        } else {
-//            insertPosition = maxRecords;
-//        }
-//        return insertPosition;
-//    }
-//
-//    private String getBlockPosition(Record record){
-//        int insertPosition = getInsertPosition(record);
-//        int blockNumber = 0;
-//        int recordNumberInBlock = 0;
-//        int counter = 0;
-//
-//        for (DBBlock block : db) {
-//            if (insertPosition - block.getNumberOfRecords() < 0) {
-//                blockNumber = counter;
-//                recordNumberInBlock = insertPosition;
-//                break;
-//            }
-//            insertPosition -= block.getNumberOfRecords();
-//            counter++;
-//        }
-//        return blockNumber + "," + recordNumberInBlock;
-//    }
+    /**
+     * Uses binary search to find the position where the record should be inserted
+     *
+     * @param record
+     * @return the record number where the record should be inserted
+     */
+    private int getInsertPosition(Record record){
+        int maxRecords = getNumberOfRecords();
+        int lowerBound = 1;
+        int insertPosition = 0;
+        while(lowerBound < maxRecords) {
+            int middle = lowerBound + (maxRecords - lowerBound) / 2;
+            int middleBlockNumber = getBlockNumOfRecord(middle);
+            String middleAttribute = db[middleBlockNumber].getRecord(getRelativeRecNum(middle, middleBlockNumber)).getAttribute(1);
+
+            if(Integer.parseInt(middleAttribute) < Integer.parseInt(record.getAttribute(1))) {
+                lowerBound = middle + 1;
+            } else {
+                maxRecords = middle - 1;
+            }
+        }
+
+        if(lowerBound > maxRecords) {
+            lowerBound = maxRecords;
+        }
+
+        if(Integer.parseInt(read(lowerBound).getAttribute(1)) < Integer.parseInt(record.getAttribute(1))) {
+            insertPosition = lowerBound + 1;
+        } else {
+            insertPosition = maxRecords;
+        }
+        return insertPosition;
+    }
+
+    /**
+     * Calculates the block and the insert position inside the block where the record should be inserted
+     *
+     * @param record
+     * @return String with the blocknumber and the insert position inside the block
+     */
+    private String getBlockPosition(Record record){
+        int insertPosition = getInsertPosition(record);
+        int blockNumber = 0;
+        int recordNumberInBlock = 0;
+        int counter = 0;
+
+        for (DBBlock block : db) {
+            if (insertPosition - block.getNumberOfRecords() < 0) {
+                blockNumber = counter;
+                recordNumberInBlock = insertPosition;
+                break;
+            }
+            insertPosition -= block.getNumberOfRecords();
+            counter++;
+        }
+        return blockNumber + "," + recordNumberInBlock;
+    }
 
     /**
      * Deletes the record specified
@@ -306,6 +303,9 @@ public class MitgliederDB implements Iterable<Record> {
         insert(newRecord);
     }
 
+    /**
+     * Closes Gaps in the Database
+     */
     public void closeGapsInDB() {
         List<String> dbContent = new ArrayList<>();
 

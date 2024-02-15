@@ -5,9 +5,8 @@ public class StartMitgliederDB {
 	public static void main(String[] args) {
 			MitgliederDB db = new MitgliederDB(false);
 			System.out.println(db);
-			
-			// TODO test your implementation with the following use cases  
-			
+
+
 			// read the a record number e.g. 32 (86;3;13;Brutt;Jasmin;12.12.04;01.01.16;;7,5)
 			Record rec = db.read(32);
 			System.out.println(rec);
